@@ -10,7 +10,6 @@ const ListeningAnimation: FC<IListeningAnimationProps> = ({ isSpeaking }) => {
       autoplay
       loop={isSpeaking}
       src="https://assets7.lottiefiles.com/temp/lf20_TuJX7j.json"
-      style={{ height: "300px", width: "300px" }}
     />
   );
 };
