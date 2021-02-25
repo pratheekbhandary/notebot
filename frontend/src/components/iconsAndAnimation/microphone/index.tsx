@@ -1,14 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext, FC } from "react";
 import hark from "hark";
 import RecordRTCPromisesHandler from "recordrtc";
 import { microphone } from "utils/constants";
-import { sendStream } from "sockets/emitters";
+import { sendStream, sendAudio } from "sockets/emitters";
 import { Button } from "@material-ui/core";
 import { playBlobAudio } from "utils/misc";
+import AppContext from "contexts/AppContext";
 
 interface IMicrophoneProps {}
 
-const Microphone = () => {
+const Microphone: FC<IMicrophoneProps> = () => {
+  // this recorder instance can listen to user in controlled manner
   const [recorder, setRecorder] = useState<RecordRTCPromisesHandler | null>(
     null
   );
@@ -21,9 +23,12 @@ const Microphone = () => {
     //IIFE coz useEffect expects a cleanup function in return not promise
     (async () => {
       try {
+        // Get permission from user to spy on him
+        // Returns a stream of audio which is sent to backend every 6000 ms using sockets
         let stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
+        //recorder lets us control the stream
         let recorder = new RecordRTCPromisesHandler(stream, {
           type: "audio",
           mimeType: "audio/webm",
@@ -31,10 +36,9 @@ const Microphone = () => {
           desiredSampRate: 16000,
           recorderType: RecordRTCPromisesHandler.StereoAudioRecorder,
           numberOfAudioChannels: 1,
-          timeSlice: 4000,
+          timeSlice: 6000,
           ondataavailable: function (blob) {
-            sendStream(blob);
-            console.log("PRAT::sending chunk", blob.size);
+            sendAudio(blob);
           },
         });
         setRecorder(recorder);
@@ -43,14 +47,15 @@ const Microphone = () => {
   }, []);
 
   useEffect(() => {
-    console.log("PRAT::effected");
     let speechEvents: hark.Harker;
     if (recorder !== null) {
       (async () => {
         try {
+          // this stream is used to activate/deactivate the main recorder based on user's silence
           let stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
           });
+          //hark helps us by triggering events when user speaks and is silent
           speechEvents = hark(stream, {});
 
           speechEvents.on("speaking", () => {
@@ -58,18 +63,18 @@ const Microphone = () => {
               return;
             }
             if (stopRecordingTimeoutRef.current !== null) {
+              //if hark thinks that user stopped speaking, but the user starts rambling again
               clearTimeout(stopRecordingTimeoutRef.current);
               stopRecordingTimeoutRef.current = null;
             } else {
               recorder.startRecording();
-              console.log("PRAT::Recording Started");
             }
           });
           speechEvents.on("stopped_speaking", function () {
             stopRecordingTimeoutRef.current = setTimeout(() => {
               recorder.stopRecording();
               stopRecordingTimeoutRef.current = null;
-              console.log("PRAT::Recording Stopped");
+              // actually stop the recording when hark thinks speaker stopped + STOP_SILENCE_TIME ms
             }, microphone.STOP_SILENCE_TIME);
           });
         } catch (err) {}

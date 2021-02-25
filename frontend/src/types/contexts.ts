@@ -18,12 +18,16 @@ export interface IThemeAction {
 export interface ISocketState {
   textFromSpeach: string;
   isSocketReady: boolean;
+  socketSessionId: string | null;
 }
 
 export interface ISocketAction {
   setTextFromSpeach: ISetTextFromSpeach;
+  setSocketSessionId: ISetSesstionId;
+  setIsSocketReady: IIsSocketReady;
 }
 
 // Actions
 export type ISetTextFromSpeach = (text: string) => void;
 export type IIsSocketReady = (flag: boolean) => void;
+export type ISetSesstionId = (id: string) => void;

@@ -8,7 +8,9 @@ import { AppProvider } from "contexts/AppContext";
 ReactDOM.render(
   <React.StrictMode>
     <AppProvider>
-      <App />
+      <AppProvider>
+        <App />
+      </AppProvider>
     </AppProvider>
   </React.StrictMode>,
   document.getElementById("root")

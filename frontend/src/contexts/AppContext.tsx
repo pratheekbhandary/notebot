@@ -19,24 +19,18 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const [textFromSpeach, setTextFromSpeach] = useState("");
   const [isSocketReady, setIsSocketReady] = useState(false);
+  const [socketSessionId, setSocketSessionId] = useState<null | string>(null);
 
-  const value = useMemo<IContext>(
-    () => ({
-      theme: {
-        states: { theme },
-        actions: { setTheme },
-      },
-      socket: {
-        states: { textFromSpeach, isSocketReady },
-        actions: { setTextFromSpeach },
-      },
-    }),
-    []
-  );
-
-  useEffect(() => {
-    initSockets({ setTextFromSpeach, setIsSocketReady });
-  }, []);
+  const value = {
+    theme: {
+      states: { theme },
+      actions: { setTheme },
+    },
+    socket: {
+      states: { textFromSpeach, isSocketReady, socketSessionId },
+      actions: { setTextFromSpeach, setSocketSessionId, setIsSocketReady },
+    },
+  };
 
   return (
     <AppContext.Provider value={value as IContext}>
@@ -45,5 +39,5 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-// export const AppConsumer = AppContext.Consumer;
+export const AppConsumer = AppContext.Consumer;
 export default AppContext;

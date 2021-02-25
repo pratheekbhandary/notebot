@@ -1,19 +1,36 @@
 import { socket } from "sockets";
-import { IInitSocketsParams, ITextFromSpeachParams } from "types/sockets";
+import { IInitSocketsParams, IServerMessage } from "types/sockets";
 import { listeners } from "utils/constants";
 
 export const socketListeners = ({
   setTextFromSpeach,
   setIsSocketReady,
+  setSessionId,
 }: IInitSocketsParams) => {
-  const onTextFromSpeach = ({ message }: ITextFromSpeachParams) => {
+  const onTextFromSpeach = (message: string) => {
     setTextFromSpeach(message);
   };
 
-  const onConnection = () => {
+  const onConnection = (id: string) => {
     setIsSocketReady(true);
+    setSessionId(id);
+    console.log("got session id:", id);
   };
 
-  socket.on(listeners.CONNECT, onConnection);
-  socket.on(listeners.SPEACH_TO_TEXT, onTextFromSpeach);
+  socket.onmessage = function (event) {
+    const serverMsg: IServerMessage = JSON.parse(event.data);
+    console.log("message from server:", serverMsg);
+    switch (serverMsg.Command) {
+      case listeners.ReceiveSessionId:
+        onConnection(serverMsg.SessionID);
+        break;
+
+      case listeners.SPEACH_TO_TEXT:
+        onTextFromSpeach(serverMsg.Data);
+        break;
+
+      default:
+        break;
+    }
+  };
 };
